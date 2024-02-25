@@ -1,8 +1,22 @@
 import {Router, Response, Request} from 'express';
+import bcrypt from 'bcrypt';
 const router = Router();
-import { User } from '../models/userModel';
+import { user } from '../models/userModel';
+import { UserErrors } from './errors';
 router.post('/signup', async (req:Request, res:Response)=>{
     const {username, password} = req.body;
-    
+    try{
+    const user1 = await user.findOne({username})
+    if (user1){
+        return res.status(400).json({type:UserErrors.exists})
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await user.create({username,password:hashedPassword});
+    await newUser.save();
+    res.json({message:"success",newUser});
+}catch(error){
+    return res.status(500).json({message:error})
+}
+
 })
 export {router as UserRouter}
